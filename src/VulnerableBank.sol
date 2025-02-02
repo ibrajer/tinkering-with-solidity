@@ -28,7 +28,11 @@ contract VulnerableBank {
         require(success, "Transfer failed");
 
         // 2. Effects (update the user's balance)
-        balances[msg.sender] -= _amount;
+        // NOTE: I added unchecked{} here to disable overflow/underflow checks
+        // they are automatically enabled on Solidity v0.8+, if I don't do this, I can't simulate re-entrancy
+        unchecked {
+            balances[msg.sender] -= _amount;
+        }
     }
 
     /**

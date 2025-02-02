@@ -9,8 +9,6 @@ import {MysteryMasks} from "../src/MysteryMasks.sol";
 contract AttackMysteryMasks is Ownable, IERC721Receiver {
     address mysteryMasksAddress;
 
-    error Something();
-
     constructor(address _mysteryMasksAddress) Ownable(msg.sender) {
         mysteryMasksAddress = _mysteryMasksAddress;
     }
@@ -50,7 +48,7 @@ contract AttackMysteryMasks is Ownable, IERC721Receiver {
     }
 }
 
-contract FreezeTest is Test {
+contract MysteryMasksTest is Test {
     address owner = address(0x1);
     address attacker = address(0x2);
     MysteryMasks public masks;
