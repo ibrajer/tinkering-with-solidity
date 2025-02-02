@@ -1,0 +1,130 @@
+# Solve the Following CTFs
+
+Helpful reading:
+
+https://www.rareskills.io/post/solidity-beginner-mistakes
+
+https://github.com/d-xo/weird-erc20
+
+### **Problem 1**
+
+The following ERC-20 token’s freeze function can be bypassed. Write a unit test showing how to do this.
+
+In addition to being able to bypass the freeze, it also has an extremely serious vulnerability. What is it?
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract StableCoin is ERC20Burnable, Ownable(msg.sender) {
+
+    constructor() ERC20("MyBurnableToken", "MBT") {
+        
+    }
+    
+    mapping(address account => bool) public isFrozen;
+
+    function mint(address receiver, uint256 amount) public onlyOwner {
+        _mint(receiver, amount);
+    }
+
+    function burn(address from, uint256 amount) public {
+        _burn(from, amount);
+    }
+
+    function freeze(address account) public onlyOwner {
+        isFrozen[account] = true;
+    }
+
+    function unfreeze(address account) public onlyOwner {
+        isFrozen[account] = false;
+    }
+
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        require(!isFrozen[msg.sender], "account frozen");
+        return super.transfer(to, amount);
+    }
+    
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+        require(!isFrozen[msg.sender], "account frozen");
+        return super.transferFrom(from, to, amount);
+    }
+}
+```
+
+All of the following contracts have a problem with reverts on the hotpath. Identify *specifically* what needs to happen for the problem to occur.
+
+### **Problem 2**
+
+There are two ways that the withdraw function can fail, leading to tokens getting stuck in the contract. What are they? Write a foundry unit test that shows someone trying to recover the token they deposited and rightfully own, but cannot withdraw.
+
+Hint: for a transaction to fail, a require statement needs be violated, or a revert get triggered. Revisit the ERC-20 library for ideas.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract NotBasedToken is ERC20Pausable, Ownable {
+		constructor(address rewarder) ERC20("NBToken", "NBT") Ownable(msg.sender) {
+			_mint(rewarder, 100_000_000e18);
+		}
+		
+		function pause() external onlyOwner {
+				_pause();
+		}
+		
+		function unpause() external onlyOwner {
+				_unpause();
+		}
+}
+
+contract NotBasedRewarder {
+		IERC20 rewardToken;
+		IERC20 depositToken;
+		
+		constructor(IERC20 _rewardToken, IERC20 _depositToken) {
+				rewardToken = _rewardToken;
+				depositToken = _depositToken;
+		}
+		
+		mapping(address => uint256) internalBalances;
+		mapping(address => uint256) depositTime; 
+		
+		function deposit(uint256 amount) public {
+				require(rewardToken.allowance(msg.sender, address(this)) > amount, "insufficient allowance");
+				
+				depositToken.transferFrom(msg.sender, address(this), amount);
+				internalBalances[msg.sender] += amount;
+				depositTime[msg.sender] = block.timestamp;
+		}
+		
+		// give a bonus if they staked for more than 24 hours
+		function withdraw(uint256 amount) external {
+				require(amount < internalBalances[msg.sender], "insufficient balance");
+				if (block.timestamp > depositTime[msg.sender] + 24 hours) {
+						rewardToken.transfer(msg.sender, amount);
+				}
+				
+				// give back their tokens
+				depositToken.transfer(msg.sender, amount);
+		}				
+}
+```
+
+Warning these questions might be difficult, but try your best!
+
+It is possible to defeat the intended behavior of the contract above — can you identify how?
+
+- Hint
+    
+    The intended behavior is if someone deposited 100 coins and held it for 24 hours, they should get 100 reward coins. Is it possible to get an even bigger reward in the same amount of time?
+    
+
+The contract above does not follow the best practices we discussed in class. How can we address it?
