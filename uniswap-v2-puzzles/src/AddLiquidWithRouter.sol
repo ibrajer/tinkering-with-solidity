@@ -22,8 +22,12 @@ contract AddLiquidWithRouter {
     function addLiquidityWithRouter(address usdcAddress, uint256 deadline) public {
         // your code start here
         uint256 maxUsdcBalance = IERC20(usdcAddress).balanceOf(address(this));
-        IUniswapV2Router(router).addLiquidityETH(
-            usdcAddress, 1000, 900, 1, msg.sender, deadline
+        uint256 maxEthBalance = address(this).balance;
+
+        IERC20(usdcAddress).approve(router, maxUsdcBalance);
+
+        IUniswapV2Router(router).addLiquidityETH{value: maxEthBalance}(
+            usdcAddress, maxUsdcBalance, 1, 1, msg.sender, deadline
         );
     }
 

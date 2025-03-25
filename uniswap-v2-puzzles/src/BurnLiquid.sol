@@ -19,6 +19,12 @@ contract BurnLiquid {
          *
          *     to: recipient address to receive tokenA and tokenB.
          */
-        // your code here
+        IUniswapV2Pair pair = IUniswapV2Pair(pool);
+
+        uint256 lpTokens = pair.balanceOf(address(this));
+        // first burner must send LP tokens within the same transaction
+        pair.transfer(pool, lpTokens);
+        // now LP tokens can be burned and USDC and ETH tokens will be received in return
+        pair.burn(address(this));
     }
 }

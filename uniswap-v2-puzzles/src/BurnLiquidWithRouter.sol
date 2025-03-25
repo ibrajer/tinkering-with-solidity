@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
+import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IERC20.sol";
 
 contract BurnLiquidWithRouter {
@@ -19,7 +20,15 @@ contract BurnLiquidWithRouter {
     }
 
     function burnLiquidityWithRouter(address pool, address usdc, address weth, uint256 deadline) public {
-        // your code start here
+        IUniswapV2Pair pair = IUniswapV2Pair(pool);
+        uint256 lpTokens = pair.balanceOf(address(this));
+        pair.approve(router, lpTokens);
+        (uint256 usdcTokens, uint256 wethTokens) =
+            IUniswapV2Router(router).removeLiquidity(usdc, weth, lpTokens, 1, 1, address(this), deadline);
+        require(usdcTokens > 0, "no USDC received");
+        require(wethTokens > 0, "no WETH received");
+        require(IERC20(usdc).balanceOf(address(this)) == usdcTokens, "balance of USDC not correct");
+        require(IERC20(weth).balanceOf(address(this)) == wethTokens, "balance of WETH not correct");
     }
 }
 

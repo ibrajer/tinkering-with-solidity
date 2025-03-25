@@ -22,7 +22,14 @@ contract ExactSwap {
          *     to: recipient address to receive the USDC tokens.
          *     data: leave it empty.
          */
+        IUniswapV2Pair pair = IUniswapV2Pair(pool);
 
-        // your code start here
+        (uint256 usdcReserve, uint256 wethReserve,) = pair.getReserves();
+
+        uint256 desiredUsdc = 1337 * 1e6;
+        uint256 desiredUsdcAfterFee = desiredUsdc * 997 / 1000;
+        uint256 exactWeth = wethReserve - ((wethReserve * usdcReserve) / (usdcReserve + desiredUsdc));
+        IERC20(weth).transfer(pool, exactWeth);
+        pair.swap(desiredUsdc, 0, address(this), "");
     }
 }

@@ -22,7 +22,10 @@ contract SimpleSwap {
          *     to: recipient address to receive the USDC tokens.
          *     data: leave it empty.
          */
+        IUniswapV2Pair pair = IUniswapV2Pair(pool);
 
-        // your code start here
+        uint256 desiredUsdc = 1 * 1e6;
+        IERC20(weth).transfer(pool, 0.01 ether);
+        pair.swap(desiredUsdc, 0, address(this), "");
     }
 }
